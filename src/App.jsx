@@ -12,12 +12,10 @@ import {
   Wifi,
   RotateCcw,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle2,
   Lock,
   Plus,
-  Minus,
   Trash2,
   Edit3,
   Eye,
@@ -44,7 +42,6 @@ import {
   Shield,
 } from 'lucide-react';
 
-// Versioned storage key for clean production state
 const STORAGE_KEY = 'save4u_v1';
 
 // Supported currencies
@@ -55,7 +52,7 @@ const CURRENCIES = {
   GBP: { code: 'GBP', symbol: '£', label: 'British Pound (£)' },
 };
 
-// Icon registry for serializable state persistence
+// Clean Icon Registry
 const ICON_MAP = {
   Wallet,
   Fuel,
@@ -73,76 +70,13 @@ const ICON_MAP = {
   PiggyBank,
   Utensils,
   Shield,
+  Sliders,
 };
 
 const ICON_KEYS = Object.keys(ICON_MAP);
 
-// Color themes for adjustable expense sliders
-const COLOR_THEMES = {
-  emerald: {
-    name: 'Emerald',
-    accent: 'accent-emerald-500',
-    dot: 'bg-emerald-500',
-    iconBgLight: 'bg-emerald-100',
-    iconBgDark: 'bg-emerald-500/20',
-    iconText: 'text-emerald-500',
-    badgeLight: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
-    badgeDark: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
-  },
-  amber: {
-    name: 'Amber',
-    accent: 'accent-amber-500',
-    dot: 'bg-amber-500',
-    iconBgLight: 'bg-amber-100',
-    iconBgDark: 'bg-amber-500/20',
-    iconText: 'text-amber-500',
-    badgeLight: 'bg-amber-50 text-amber-800 border border-amber-200',
-    badgeDark: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
-  },
-  purple: {
-    name: 'Purple',
-    accent: 'accent-purple-500',
-    dot: 'bg-purple-500',
-    iconBgLight: 'bg-purple-100',
-    iconBgDark: 'bg-purple-500/20',
-    iconText: 'text-purple-500',
-    badgeLight: 'bg-purple-50 text-purple-800 border border-purple-200',
-    badgeDark: 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
-  },
-  blue: {
-    name: 'Blue',
-    accent: 'accent-blue-500',
-    dot: 'bg-blue-500',
-    iconBgLight: 'bg-blue-100',
-    iconBgDark: 'bg-blue-500/20',
-    iconText: 'text-blue-500',
-    badgeLight: 'bg-blue-50 text-blue-800 border border-blue-200',
-    badgeDark: 'bg-blue-500/15 text-blue-300 border border-blue-500/30',
-  },
-  teal: {
-    name: 'Teal',
-    accent: 'accent-teal-500',
-    dot: 'bg-teal-500',
-    iconBgLight: 'bg-teal-100',
-    iconBgDark: 'bg-teal-500/20',
-    iconText: 'text-teal-500',
-    badgeLight: 'bg-teal-50 text-teal-800 border border-teal-200',
-    badgeDark: 'bg-teal-500/15 text-teal-300 border border-teal-500/30',
-  },
-  rose: {
-    name: 'Rose',
-    accent: 'accent-rose-500',
-    dot: 'bg-rose-500',
-    iconBgLight: 'bg-rose-100',
-    iconBgDark: 'bg-rose-500/20',
-    iconText: 'text-rose-500',
-    badgeLight: 'bg-rose-50 text-rose-800 border border-rose-200',
-    badgeDark: 'bg-rose-500/15 text-rose-300 border border-rose-500/30',
-  },
-};
-
 /**
- * Formats a numeric value with the selected currency symbol
+ * Currency formatter
  */
 const formatMoney = (value, currencyCode = 'ZAR') => {
   const symbol = CURRENCIES[currencyCode]?.symbol || 'R';
@@ -153,7 +87,7 @@ const formatMoney = (value, currencyCode = 'ZAR') => {
 };
 
 /**
- * Calculates a sensible default slider Max and Step scaled to the user's income
+ * Calculates sensible slider defaults scaled to income
  */
 const getScaledSliderDefaults = (totalIncome) => {
   const base = Number(totalIncome) > 0 ? Number(totalIncome) : 10000;
@@ -163,59 +97,55 @@ const getScaledSliderDefaults = (totalIncome) => {
 };
 
 /**
- * Generates zeroed-out standard categories scaled to the user's entered income
+ * Standard categories scaffold
  */
 const createStandardZeroedCategories = (totalIncome) => {
   const { max, step } = getScaledSliderDefaults(totalIncome);
   return {
     fixedExpenses: [
       { id: 'fix-housing', label: 'Housing / Rent', amount: 0, icon: 'Home', enabled: true },
-      { id: 'fix-utilities', label: 'Utilities & Wifi', amount: 0, icon: 'Wifi', enabled: true },
-      { id: 'fix-transport', label: 'Vehicle / Transport', amount: 0, icon: 'Car', enabled: true },
+      { id: 'fix-utilities', label: 'Utilities & Wi-Fi', amount: 0, icon: 'Wifi', enabled: true },
+      { id: 'fix-transport', label: 'Vehicle & Transport', amount: 0, icon: 'Car', enabled: true },
     ],
     variableExpenses: [
       {
         id: 'var-groceries',
         label: 'Groceries & Household',
-        subtitle: 'Food & essentials',
+        subtitle: 'Food and daily supplies',
         value: 0,
         max,
         step,
         icon: 'ShoppingBag',
-        color: 'emerald',
         enabled: true,
       },
       {
         id: 'var-fuel',
-        label: 'Fuel & Commuting',
-        subtitle: 'Daily travel costs',
+        label: 'Fuel & Commute',
+        subtitle: 'Travel and transport',
         value: 0,
         max,
         step,
         icon: 'Fuel',
-        color: 'amber',
         enabled: true,
       },
       {
         id: 'var-savings',
-        label: 'Savings / Stokvel',
-        subtitle: 'Monthly investments & goals',
+        label: 'Savings & Investments',
+        subtitle: 'Emergency fund and goals',
         value: 0,
         max,
         step,
         icon: 'PiggyBank',
-        color: 'teal',
         enabled: true,
       },
       {
         id: 'var-leisure',
-        label: 'Dining & Entertainment',
-        subtitle: 'Leisure & social',
+        label: 'Dining & Leisure',
+        subtitle: 'Discretionary spending',
         value: 0,
         max,
         step,
         icon: 'Sparkles',
-        color: 'purple',
         enabled: true,
       },
     ],
@@ -223,8 +153,7 @@ const createStandardZeroedCategories = (totalIncome) => {
 };
 
 /**
- * Reusable SliderRow component with inline value editing, inline max-cap editing,
- * pause toggle, edit modal trigger, and delete button.
+ * Minimalist, uncluttered SliderRow
  */
 const SliderRow = ({
   item,
@@ -242,22 +171,10 @@ const SliderRow = ({
   const [tempMax, setTempMax] = useState(String(item.max));
 
   const IconComponent = ICON_MAP[item.icon] || Sliders;
-  const colorConfig = COLOR_THEMES[item.color] || COLOR_THEMES.emerald;
   const min = 0;
   const max = Math.max(100, Number(item.max) || 1000);
   const step = Math.max(1, Number(item.step) || 50);
   const value = Number(item.value) || 0;
-  const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
-
-  const handleDecrement = () => {
-    if (!item.enabled) return;
-    onChangeValue(item.id, Math.max(min, value - step));
-  };
-
-  const handleIncrement = () => {
-    if (!item.enabled) return;
-    onChangeValue(item.id, Math.min(max, value + step));
-  };
 
   const commitValueEdit = () => {
     const parsed = Math.max(0, Math.round(Number(tempValue) || 0));
@@ -279,65 +196,53 @@ const SliderRow = ({
 
   return (
     <div
-      className={`p-4 rounded-2xl border transition-all duration-200 ${
-        !item.enabled ? 'opacity-55 ' : ''
-      }${
+      className={`p-4 rounded-2xl border transition-all ${
+        !item.enabled ? 'opacity-40' : ''
+      } ${
         darkMode
-          ? 'bg-gray-800/80 border-gray-700/80 hover:border-gray-600'
-          : 'bg-white border-gray-100 shadow-sm hover:border-gray-200'
+          ? 'bg-slate-800/60 border-slate-700/60 hover:border-slate-600'
+          : 'bg-white border-slate-200/80 shadow-xs hover:border-slate-300'
       }`}
     >
-      {/* Top Row: Icon, Label, Actions & Value */}
-      <div className="flex items-start sm:items-center justify-between gap-2 mb-3">
+      {/* Header: Icon, Label, Inline Value */}
+      <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-              darkMode ? colorConfig.iconBgDark : colorConfig.iconBgLight
+            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+              darkMode ? 'bg-slate-700/60 text-slate-300' : 'bg-slate-100 text-slate-700'
             }`}
           >
-            <IconComponent className={`w-5 h-5 ${colorConfig.iconText}`} />
+            <IconComponent className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h3
-                className={`font-semibold text-sm sm:text-base leading-tight truncate ${
-                  darkMode ? 'text-gray-100' : 'text-gray-800'
+            <div className="flex items-center gap-2">
+              <span
+                className={`font-semibold text-sm leading-tight truncate ${
+                  darkMode ? 'text-slate-100' : 'text-slate-900'
                 } ${!item.enabled ? 'line-through' : ''}`}
               >
                 {item.label}
-              </h3>
+              </span>
               {!item.enabled && (
-                <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 font-semibold">
+                <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 font-medium">
                   Paused
                 </span>
               )}
             </div>
-            <p
-              className={`text-xs mt-0.5 truncate ${
-                darkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}
-            >
-              {item.subtitle || 'Adjustable monthly expense'}
-            </p>
+            {item.subtitle && (
+              <p
+                className={`text-xs mt-0.5 truncate ${
+                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                }`}
+              >
+                {item.subtitle}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Right Side: Step Controls, Inline Value Badge & Item Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={handleDecrement}
-            disabled={!item.enabled || value <= min}
-            aria-label={`Decrease ${item.label}`}
-            className={`p-1.5 rounded-lg border transition-colors disabled:opacity-35 disabled:cursor-not-allowed ${
-              darkMode
-                ? 'border-gray-700 bg-gray-700/50 hover:bg-gray-700 text-gray-300'
-                : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600'
-            }`}
-          >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-
+        {/* Value badge */}
+        <div>
           {editingValue ? (
             <input
               type="number"
@@ -350,10 +255,10 @@ const SliderRow = ({
                 if (e.key === 'Enter') commitValueEdit();
                 if (e.key === 'Escape') setEditingValue(false);
               }}
-              className={`w-24 px-2 py-1 rounded-lg font-bold text-sm text-center border outline-none ${
+              className={`w-24 px-2 py-1 rounded-lg font-mono font-bold text-sm text-center border outline-none ${
                 darkMode
-                  ? 'bg-gray-900 border-emerald-500 text-white'
-                  : 'bg-white border-emerald-600 text-gray-900'
+                  ? 'bg-slate-900 border-emerald-500 text-white'
+                  : 'bg-white border-emerald-600 text-slate-900'
               }`}
             />
           ) : (
@@ -363,33 +268,21 @@ const SliderRow = ({
                 setTempValue(String(value));
                 setEditingValue(true);
               }}
-              title="Click to type an exact amount"
-              className={`px-3 py-1 rounded-lg font-bold text-sm sm:text-base tabular-nums min-w-[5.5rem] text-center transition-transform active:scale-95 ${
-                darkMode ? colorConfig.badgeDark : colorConfig.badgeLight
+              title="Click to enter exact amount"
+              className={`px-3 py-1 rounded-lg font-mono font-semibold text-sm tracking-tight transition-colors ${
+                darkMode
+                  ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-100'
+                  : 'bg-slate-100 hover:bg-slate-200/70 text-slate-900'
               }`}
             >
               {formatMoney(value, currency)}
             </button>
           )}
-
-          <button
-            type="button"
-            onClick={handleIncrement}
-            disabled={!item.enabled || value >= max}
-            aria-label={`Increase ${item.label}`}
-            className={`p-1.5 rounded-lg border transition-colors disabled:opacity-35 disabled:cursor-not-allowed ${
-              darkMode
-                ? 'border-gray-700 bg-gray-700/50 hover:bg-gray-700 text-gray-300'
-                : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600'
-            }`}
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
 
-      {/* Range Slider Input */}
-      <div className="relative flex items-center">
+      {/* Range Slider */}
+      <div className="py-1">
         <input
           type="range"
           min={min}
@@ -399,31 +292,18 @@ const SliderRow = ({
           value={Math.min(value, max)}
           onChange={(e) => onChangeValue(item.id, Number(e.target.value))}
           aria-label={item.label}
-          className={`w-full h-2.5 rounded-lg cursor-pointer transition-all disabled:cursor-not-allowed ${
-            colorConfig.accent
-          } ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+          className="w-full h-1.5 rounded-lg cursor-pointer accent-emerald-600 dark:accent-emerald-500"
         />
       </div>
 
-      {/* Footer Row: Min / Step Info / Inline Editable Max / Quick Actions */}
-      <div
-        className={`flex flex-wrap justify-between items-center gap-2 text-[11px] font-medium mt-2.5 pt-2 border-t ${
-          darkMode
-            ? 'text-gray-400 border-gray-700/50'
-            : 'text-gray-400 border-gray-100'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <span>{Math.round(percentage)}% of cap</span>
-          <span>•</span>
-          <span>Step: {formatMoney(step, currency)}</span>
-        </div>
+      {/* Footer: Min, Max (editable), discreet action icons */}
+      <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 mt-2 font-mono">
+        <span>{formatMoney(0, currency)}</span>
 
-        <div className="flex items-center gap-2">
-          {/* Inline Max Limit Editor */}
+        <div className="flex items-center gap-3">
           {editingMax ? (
-            <div className="flex items-center gap-1">
-              <span>Max:</span>
+            <div className="flex items-center gap-1 font-sans">
+              <span className="text-[11px]">Cap:</span>
               <input
                 type="number"
                 min="100"
@@ -435,10 +315,10 @@ const SliderRow = ({
                   if (e.key === 'Enter') commitMaxEdit();
                   if (e.key === 'Escape') setEditingMax(false);
                 }}
-                className={`w-20 px-1.5 py-0.5 rounded text-xs font-bold border outline-none ${
+                className={`w-16 px-1 py-0.5 rounded text-xs font-mono font-semibold border outline-none ${
                   darkMode
-                    ? 'bg-gray-900 border-emerald-500 text-white'
-                    : 'bg-white border-emerald-600 text-gray-900'
+                    ? 'bg-slate-900 border-emerald-500 text-white'
+                    : 'bg-white border-emerald-600 text-slate-900'
                 }`}
               />
             </div>
@@ -449,47 +329,39 @@ const SliderRow = ({
                 setTempMax(String(max));
                 setEditingMax(true);
               }}
-              title="Click to change slider max limit"
-              className={`hover:underline font-semibold ${
-                darkMode ? 'text-gray-300' : 'text-gray-600'
-              }`}
+              title="Click to edit maximum cap"
+              className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
             >
               Max: {formatMoney(max, currency)}
             </button>
           )}
 
-          <span className="opacity-40">|</span>
-
-          <button
-            type="button"
-            onClick={() => onToggleEnabled(item.id)}
-            title={item.enabled ? 'Pause expense' : 'Resume expense'}
-            className={`p-1 rounded hover:bg-gray-500/10 transition-colors ${
-              darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            {item.enabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onEdit(item)}
-            title="Edit slider settings"
-            className={`p-1 rounded hover:bg-gray-500/10 transition-colors ${
-              darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDelete(item.id)}
-            title="Delete slider"
-            className="p-1 rounded hover:bg-red-500/10 text-red-400 hover:text-red-500 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 border-l border-slate-200 dark:border-slate-700/60 pl-2 font-sans">
+            <button
+              type="button"
+              onClick={() => onToggleEnabled(item.id)}
+              title={item.enabled ? 'Pause expense' : 'Resume expense'}
+              className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            >
+              {item.enabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              title="Edit slider settings"
+              className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(item.id)}
+              title="Delete slider"
+              className="p-1 rounded hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -497,7 +369,6 @@ const SliderRow = ({
 };
 
 export default function App() {
-  // Load initial state from localStorage or default to un-onboarded clean slate
   const [appState, setAppState] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -539,20 +410,20 @@ export default function App() {
     scenarios,
   } = appState;
 
-  // Onboarding wizard local state
+  // Wizard state
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [setupCurrency, setSetupCurrency] = useState('ZAR');
   const [setupIncomeLabel, setSetupIncomeLabel] = useState('Primary Monthly Income');
   const [setupIncomeAmount, setSetupIncomeAmount] = useState('');
 
-  // Modals & UI feedback states
-  const [activeModal, setActiveModal] = useState(null); // 'income' | 'fixed' | 'variable' | 'settings' | 'scenario' | null
+  // Modals
+  const [activeModal, setActiveModal] = useState(null); // 'income' | 'fixed' | 'variable' | 'settings' | 'scenarios' | null
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Form states for Add/Edit Modals
+  // Forms
   const [incomeForm, setIncomeForm] = useState({ label: '', amount: '' });
   const [fixedForm, setFixedForm] = useState({ label: '', amount: '', icon: 'Home' });
   const [variableForm, setVariableForm] = useState({
@@ -562,11 +433,10 @@ export default function App() {
     max: '2000',
     step: '50',
     icon: 'ShoppingBag',
-    color: 'emerald',
   });
   const [scenarioName, setScenarioName] = useState('');
 
-  // Persist to localStorage whenever appState changes
+  // Save to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -575,7 +445,7 @@ export default function App() {
     }
   }, [appState]);
 
-  // Sync dark mode class on root HTML element
+  // Dark mode HTML class
   useEffect(() => {
     const root = document.documentElement;
     if (darkMode) {
@@ -585,22 +455,20 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Helper to show non-blocking toast notifications
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 3000);
+    }, 2800);
   };
 
-  // Update partial appState helper
   const updateState = (updater) => {
     setAppState((prev) =>
       typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
     );
   };
 
-  // Financial Calculations
+  // Financial calculations
   const totalIncome = useMemo(
     () =>
       incomes
@@ -631,10 +499,8 @@ export default function App() {
 
   const rawExpenseRatio = totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : 0;
   const progressPercentage = totalIncome > 0 ? Math.min(rawExpenseRatio, 100) : 0;
-  const fixedPercentage = totalIncome > 0 ? (totalFixed / totalIncome) * 100 : 0;
-  const variablePercentage = totalIncome > 0 ? (totalVariable / totalIncome) * 100 : 0;
 
-  // --- Onboarding Completion Handlers ---
+  // Onboarding completion
   const completeOnboarding = (mode) => {
     const parsedIncome = Math.max(0, Math.round(Number(setupIncomeAmount) || 0));
     const initialIncomes =
@@ -657,7 +523,7 @@ export default function App() {
         fixedExpenses: [],
         variableExpenses: [],
       });
-      showToast('Started with a clean blank canvas');
+      showToast('Blank workspace ready');
     } else if (mode === 'standard') {
       const scaffold = createStandardZeroedCategories(parsedIncome);
       updateState({
@@ -677,7 +543,7 @@ export default function App() {
         incomes: [
           {
             id: 'inc-demo-1',
-            label: setupIncomeLabel.trim() || 'Monthly Take-Home Pay',
+            label: setupIncomeLabel.trim() || 'Monthly Net Salary',
             amount: demoIncome,
             enabled: true,
           },
@@ -685,23 +551,23 @@ export default function App() {
         fixedExpenses: [
           {
             id: 'fix-demo-1',
-            label: 'Housing / Rent',
+            label: 'Rent / Mortgage',
             amount: Math.round(demoIncome * 0.28),
             icon: 'Home',
             enabled: true,
           },
           {
             id: 'fix-demo-2',
-            label: 'Utilities & Fibre',
+            label: 'Utilities & Wi-Fi',
             amount: Math.round(demoIncome * 0.06),
             icon: 'Wifi',
             enabled: true,
           },
           {
             id: 'fix-demo-3',
-            label: 'Insurance & Mobile',
-            amount: Math.round(demoIncome * 0.05),
-            icon: 'Shield',
+            label: 'Car & Insurance',
+            amount: Math.round(demoIncome * 0.12),
+            icon: 'Car',
             enabled: true,
           },
         ],
@@ -709,57 +575,53 @@ export default function App() {
           {
             id: 'var-demo-1',
             label: 'Groceries & Household',
-            subtitle: 'Food & monthly supplies',
-            value: Math.round(demoIncome * 0.14),
+            subtitle: 'Food and daily essentials',
+            value: Math.round(demoIncome * 0.15),
             max,
             step,
             icon: 'ShoppingBag',
-            color: 'emerald',
             enabled: true,
           },
           {
             id: 'var-demo-2',
-            label: 'Transport & Fuel',
-            subtitle: 'Daily commuting',
+            label: 'Fuel & Commute',
+            subtitle: 'Weekly petrol / transit',
             value: Math.round(demoIncome * 0.08),
             max,
             step,
             icon: 'Fuel',
-            color: 'amber',
             enabled: true,
           },
           {
             id: 'var-demo-3',
-            label: 'Savings & Investments',
-            subtitle: 'Emergency fund & Stokvel',
+            label: 'Savings & Emergency',
+            subtitle: 'Stokvel / High-yield savings',
             value: Math.round(demoIncome * 0.12),
             max,
             step,
             icon: 'PiggyBank',
-            color: 'teal',
             enabled: true,
           },
           {
             id: 'var-demo-4',
             label: 'Dining & Leisure',
-            subtitle: 'Entertainment & social',
+            subtitle: 'Restaurants and social',
             value: Math.round(demoIncome * 0.06),
             max,
             step,
             icon: 'Sparkles',
-            color: 'purple',
             enabled: true,
           },
         ],
       });
-      showToast('Loaded sample demo values');
+      showToast('Loaded sample budget');
     }
   };
 
-  // --- CRUD Handlers for Incomes ---
+  // Income handlers
   const handleAddOrUpdateIncome = (e) => {
     e.preventDefault();
-    const label = incomeForm.label.trim() || 'Income Stream';
+    const label = incomeForm.label.trim() || 'Income Source';
     const amount = Math.max(0, Math.round(Number(incomeForm.amount) || 0));
 
     if (editingItem) {
@@ -778,7 +640,7 @@ export default function App() {
           { id: `inc-${Date.now()}`, label, amount, enabled: true },
         ],
       }));
-      showToast('Income stream added');
+      showToast('Income added');
     }
     setEditingItem(null);
     setIncomeForm({ label: '', amount: '' });
@@ -798,10 +660,10 @@ export default function App() {
       ...prev,
       incomes: prev.incomes.filter((inc) => inc.id !== id),
     }));
-    showToast('Income stream removed');
+    showToast('Income removed');
   };
 
-  // --- CRUD Handlers for Fixed Expenses ---
+  // Fixed bills handlers
   const openFixedModal = (item = null) => {
     if (item) {
       setEditingItem(item);
@@ -830,7 +692,7 @@ export default function App() {
           item.id === editingItem.id ? { ...item, label, amount, icon } : item
         ),
       }));
-      showToast('Fixed commitment updated');
+      showToast('Fixed bill updated');
     } else {
       updateState((prev) => ({
         ...prev,
@@ -839,7 +701,7 @@ export default function App() {
           { id: `fix-${Date.now()}`, label, amount, icon, enabled: true },
         ],
       }));
-      showToast('Fixed commitment added');
+      showToast('Fixed bill added');
     }
     setActiveModal(null);
     setEditingItem(null);
@@ -859,10 +721,10 @@ export default function App() {
       ...prev,
       fixedExpenses: prev.fixedExpenses.filter((item) => item.id !== id),
     }));
-    showToast('Fixed commitment removed');
+    showToast('Fixed bill removed');
   };
 
-  // --- CRUD Handlers for Variable Expense Sliders ---
+  // Variable slider handlers
   const openVariableModal = (item = null) => {
     if (item) {
       setEditingItem(item);
@@ -873,7 +735,6 @@ export default function App() {
         max: String(item.max),
         step: String(item.step),
         icon: item.icon || 'ShoppingBag',
-        color: item.color || 'emerald',
       });
     } else {
       const defaults = getScaledSliderDefaults(totalIncome);
@@ -885,7 +746,6 @@ export default function App() {
         max: String(defaults.max),
         step: String(defaults.step),
         icon: 'ShoppingBag',
-        color: 'emerald',
       });
     }
     setActiveModal('variable');
@@ -894,23 +754,22 @@ export default function App() {
   const handleSaveVariable = (e) => {
     e.preventDefault();
     const label = variableForm.label.trim() || 'Adjustable Expense';
-    const subtitle = variableForm.subtitle.trim() || 'Monthly allocation';
+    const subtitle = variableForm.subtitle.trim();
     const value = Math.max(0, Math.round(Number(variableForm.value) || 0));
     const max = Math.max(100, value, Math.round(Number(variableForm.max) || 1000));
     const step = Math.max(1, Math.round(Number(variableForm.step) || 50));
     const icon = variableForm.icon || 'ShoppingBag';
-    const color = variableForm.color || 'emerald';
 
     if (editingItem) {
       updateState((prev) => ({
         ...prev,
         variableExpenses: prev.variableExpenses.map((item) =>
           item.id === editingItem.id
-            ? { ...item, label, subtitle, value, max, step, icon, color }
+            ? { ...item, label, subtitle, value, max, step, icon }
             : item
         ),
       }));
-      showToast('Expense slider updated');
+      showToast('Slider updated');
     } else {
       updateState((prev) => ({
         ...prev,
@@ -924,12 +783,11 @@ export default function App() {
             max,
             step,
             icon,
-            color,
             enabled: true,
           },
         ],
       }));
-      showToast('Expense slider added');
+      showToast('Slider added');
     }
     setActiveModal(null);
     setEditingItem(null);
@@ -951,7 +809,6 @@ export default function App() {
         item.id === id ? { ...item, max: newMax } : item
       ),
     }));
-    showToast(`Max cap updated to ${formatMoney(newMax, currency)}`);
   };
 
   const handleToggleVariable = (id) => {
@@ -968,7 +825,7 @@ export default function App() {
       ...prev,
       variableExpenses: prev.variableExpenses.filter((item) => item.id !== id),
     }));
-    showToast('Expense slider removed');
+    showToast('Slider removed');
   };
 
   const handleZeroAllSliders = () => {
@@ -979,7 +836,7 @@ export default function App() {
     showToast('All sliders set to 0');
   };
 
-  // --- Saved Scenarios Management ---
+  // Scenarios
   const handleSaveScenario = (e) => {
     e.preventDefault();
     const name = scenarioName.trim() || `Scenario ${scenarios.length + 1}`;
@@ -996,8 +853,7 @@ export default function App() {
       scenarios: [snapshot, ...prev.scenarios],
     }));
     setScenarioName('');
-    setActiveModal(null);
-    showToast(`Saved scenario "${name}"`);
+    showToast(`Saved snapshot "${name}"`);
   };
 
   const handleLoadScenario = (scenario) => {
@@ -1007,7 +863,7 @@ export default function App() {
       fixedExpenses: JSON.parse(JSON.stringify(scenario.fixedExpenses || [])),
       variableExpenses: JSON.parse(JSON.stringify(scenario.variableExpenses || [])),
     }));
-    showToast(`Loaded scenario "${scenario.name}"`);
+    showToast(`Loaded "${scenario.name}"`);
   };
 
   const handleDeleteScenario = (id) => {
@@ -1015,13 +871,13 @@ export default function App() {
       ...prev,
       scenarios: prev.scenarios.filter((s) => s.id !== id),
     }));
-    showToast('Scenario deleted');
+    showToast('Scenario removed');
   };
 
-  // --- Export / Import / Factory Reset Tools ---
+  // Copy summary
   const handleCopySummary = async () => {
     const lines = [
-      `📊 Save4U SUMMARY`,
+      `SAVE4U BUDGET SUMMARY`,
       `────────────────────────────`,
       `Monthly Income: ${formatMoney(totalIncome, currency)}`,
       `Fixed Commitments: ${formatMoney(totalFixed, currency)}`,
@@ -1031,7 +887,7 @@ export default function App() {
     ];
 
     if (variableExpenses.length > 0) {
-      lines.push(`\nAdjustable Breakdown:`);
+      lines.push(`\nAdjustable Expenses:`);
       variableExpenses
         .filter((v) => v.enabled !== false)
         .forEach((v) => {
@@ -1050,12 +906,13 @@ export default function App() {
 
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
-      showToast('Budget summary copied to clipboard');
+      showToast('Summary copied to clipboard');
     } catch {
-      showToast('Unable to access clipboard');
+      showToast('Clipboard access unavailable');
     }
   };
 
+  // Export CSV / JSON
   const handleExportCSV = () => {
     const rows = [
       ['Type', 'Category', 'Amount', 'Max Limit', 'Status'],
@@ -1090,12 +947,12 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `cashflow-plan-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `save4u-budget-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('Downloaded CSV spreadsheet');
+    showToast('Downloaded CSV');
   };
 
   const handleExportJSON = () => {
@@ -1105,12 +962,12 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `cashflow-backup-${new Date().toISOString().slice(0, 10)}.json`);
+    link.setAttribute('download', `save4u-backup-${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('Downloaded JSON backup');
+    showToast('Downloaded backup');
   };
 
   const handleImportJSON = (e) => {
@@ -1131,10 +988,10 @@ export default function App() {
             scenarios: Array.isArray(parsed.scenarios) ? parsed.scenarios : [],
           });
           setActiveModal(null);
-          showToast('Budget backup restored successfully');
+          showToast('Backup restored');
         }
       } catch {
-        showToast('Invalid backup JSON file');
+        showToast('Invalid backup file');
       }
     };
     reader.readAsText(file);
@@ -1156,36 +1013,28 @@ export default function App() {
       variableExpenses: [],
       scenarios: [],
     });
-    showToast('All data cleared. Returned to setup.');
+    showToast('Reset complete. Returned to setup.');
   };
 
   // ============================================================================
-  // RENDER 1: FIRST-TIME USER ONBOARDING FLOW (NO HARDCODED PERSONAL VALUES)
+  // FIRST TIME ONBOARDING
   // ============================================================================
   if (!onboarded) {
     return (
       <div className={darkMode ? 'dark' : ''}>
         <div
-          className={`min-h-screen transition-colors duration-300 py-8 px-4 sm:px-6 flex flex-col items-center justify-center ${
-            darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
+          className={`min-h-screen transition-colors duration-300 py-10 px-4 flex flex-col items-center justify-center ${
+            darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'
           }`}
         >
-          <div className="w-full max-w-lg mx-auto">
+          <div className="w-full max-w-md mx-auto">
             {/* Top Bar */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2.5">
-                <div
-                  className={`p-2.5 rounded-2xl shadow-sm ${
-                    darkMode
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-emerald-600 text-white'
-                  }`}
-                >
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
                   <Wallet className="w-5 h-5" />
                 </div>
-                <span className="font-bold text-lg tracking-tight">
-                  Save4U
-                </span>
+                <span className="font-bold text-lg tracking-tight">Save4U</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1195,8 +1044,8 @@ export default function App() {
                   aria-label="Toggle theme"
                   className={`p-2 rounded-xl border transition-colors ${
                     darkMode
-                      ? 'bg-gray-800 border-gray-700 text-amber-400 hover:bg-gray-700'
-                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'
+                      ? 'bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -1205,35 +1054,33 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => completeOnboarding('blank')}
-                  className={`text-xs font-semibold px-3 py-2 rounded-xl border transition-colors ${
+                  className={`text-xs font-medium px-3 py-2 rounded-xl border transition-colors ${
                     darkMode
-                      ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
-                      : 'border-gray-200 text-gray-600 hover:bg-white'
+                      ? 'border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      : 'border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-white'
                   }`}
                 >
-                  Skip to Blank App
+                  Skip
                 </button>
               </div>
             </div>
 
-            {/* Onboarding Card */}
+            {/* Card */}
             <div
-              className={`rounded-3xl p-6 sm:p-8 border shadow-lg transition-all ${
-                darkMode
-                  ? 'bg-gray-800/90 border-gray-700'
-                  : 'bg-white border-gray-100'
+              className={`rounded-3xl p-6 sm:p-7 border transition-all ${
+                darkMode ? 'bg-slate-800/80 border-slate-700/80' : 'bg-white border-slate-200/80 shadow-sm'
               }`}
             >
-              {/* Step Indicator */}
+              {/* Stepper dots */}
               <div className="flex items-center gap-2 mb-6">
                 <div
-                  className={`h-1.5 flex-1 rounded-full ${
-                    onboardingStep >= 1 ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'
+                  className={`h-1 flex-1 rounded-full ${
+                    onboardingStep >= 1 ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-700'
                   }`}
                 />
                 <div
-                  className={`h-1.5 flex-1 rounded-full ${
-                    onboardingStep >= 2 ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+                  className={`h-1 flex-1 rounded-full ${
+                    onboardingStep >= 2 ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-700'
                   }`}
                 />
               </div>
@@ -1241,70 +1088,67 @@ export default function App() {
               {onboardingStep === 1 ? (
                 <div className="space-y-5">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-500">
-                      Step 1 of 2 • Quick Setup
-                    </span>
-                    <h1 className="text-2xl font-extrabold mt-1">
-                      Set your currency & monthly income
+                    <h1 className="text-xl font-bold tracking-tight">
+                      Currency & Monthly Income
                     </h1>
                     <p
-                      className={`text-sm mt-1 ${
-                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      className={`text-xs mt-1 leading-relaxed ${
+                        darkMode ? 'text-slate-400' : 'text-slate-500'
                       }`}
                     >
-                      Everything stays 100% private in your browser. You can change or add more income streams at any time.
+                      Private and stored only on your device. You can adjust this anytime.
                     </p>
                   </div>
 
-                  {/* Currency Selection */}
+                  {/* Currency Picker */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                       Select Currency
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       {Object.values(CURRENCIES).map((curr) => (
                         <button
                           key={curr.code}
                           type="button"
                           onClick={() => setSetupCurrency(curr.code)}
-                          className={`p-3 rounded-xl border text-left transition-all ${
+                          className={`p-2.5 rounded-xl border text-center transition-all ${
                             setupCurrency === curr.code
                               ? darkMode
-                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                                : 'bg-emerald-50 border-emerald-600 text-emerald-900'
+                                ? 'bg-emerald-500/15 border-emerald-500 text-emerald-300 font-bold'
+                                : 'bg-emerald-50 border-emerald-600 text-emerald-900 font-bold'
                               : darkMode
-                              ? 'bg-gray-900/50 border-gray-700 text-gray-300 hover:border-gray-600'
-                              : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300'
+                              ? 'bg-slate-900/50 border-slate-700 text-slate-300 hover:border-slate-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                           }`}
                         >
-                          <div className="text-lg font-extrabold">{curr.symbol}</div>
-                          <div className="text-xs opacity-75 font-medium">{curr.code}</div>
+                          <div className="text-base font-bold font-mono">{curr.symbol}</div>
+                          <div className="text-[11px] opacity-75">{curr.code}</div>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Primary Income Input */}
+                  {/* Income Fields */}
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5">
-                        Income Source Name
+                      <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                        Income Name
                       </label>
                       <input
                         type="text"
                         value={setupIncomeLabel}
                         onChange={(e) => setSetupIncomeLabel(e.target.value)}
-                        placeholder="e.g., Monthly Take-Home Salary"
-                        className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-colors ${
+                        placeholder="e.g. Monthly Take-Home Salary"
+                        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
                           darkMode
-                            ? 'bg-gray-900 border-gray-700 focus:border-emerald-500 text-white'
-                            : 'bg-gray-50 border-gray-200 focus:border-emerald-600 text-gray-900'
+                            ? 'bg-slate-900 border-slate-700 focus:border-emerald-500 text-white'
+                            : 'bg-slate-50 border-slate-200 focus:border-emerald-600 text-slate-900'
                         }`}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                         Monthly Net Amount ({CURRENCIES[setupCurrency].symbol})
                       </label>
                       <input
@@ -1316,21 +1160,21 @@ export default function App() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') setOnboardingStep(2);
                         }}
-                        placeholder="Enter your monthly income (or leave 0 to set later)"
-                        className={`w-full px-4 py-3 rounded-xl border text-base font-bold outline-none transition-colors ${
+                        placeholder="e.g. 15000"
+                        className={`w-full px-3.5 py-2.5 rounded-xl border text-base font-bold font-mono outline-none transition-colors ${
                           darkMode
-                            ? 'bg-gray-900 border-gray-700 focus:border-emerald-500 text-white'
-                            : 'bg-gray-50 border-gray-200 focus:border-emerald-600 text-gray-900'
+                            ? 'bg-slate-900 border-slate-700 focus:border-emerald-500 text-white'
+                            : 'bg-slate-50 border-slate-200 focus:border-emerald-600 text-slate-900'
                         }`}
                       />
                     </div>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-end">
+                  <div className="pt-2">
                     <button
                       type="button"
                       onClick={() => setOnboardingStep(2)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-sm transition-all"
+                      className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-colors shadow-xs"
                     >
                       Continue
                       <ArrowRight className="w-4 h-4" />
@@ -1338,117 +1182,86 @@ export default function App() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-500">
-                      Step 2 of 2 • Workspace Layout
-                    </span>
-                    <h2 className="text-2xl font-extrabold mt-1">
-                      How would you like to start?
-                    </h2>
+                    <h2 className="text-xl font-bold tracking-tight">Choose Starting Layout</h2>
                     <p
-                      className={`text-sm mt-1 ${
-                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      className={`text-xs mt-1 ${
+                        darkMode ? 'text-slate-400' : 'text-slate-500'
                       }`}
                     >
-                      No pre-filled personal expenses are forced on you. Choose the starting setup that fits your workflow.
+                      Pick how you want to set up your categories:
                     </p>
                   </div>
 
-                  <div className="space-y-3">
-                    {/* Option 1: Blank Canvas */}
-                    <button
-                      type="button"
-                      onClick={() => completeOnboarding('blank')}
-                      className={`w-full p-4 rounded-2xl border text-left transition-all flex items-start gap-4 ${
-                        darkMode
-                          ? 'bg-gray-900/60 border-gray-700 hover:border-emerald-500/60'
-                          : 'bg-gray-50 border-gray-200 hover:border-emerald-500'
-                      }`}
-                    >
-                      <div className="p-3 rounded-xl bg-emerald-500/15 text-emerald-500 shrink-0">
-                        <Plus className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base">
-                          Start with a Blank Canvas
-                        </h3>
-                        <p
-                          className={`text-xs mt-1 ${
-                            darkMode ? 'text-gray-400' : 'text-gray-500'
-                          }`}
-                        >
-                          Starts with 0 fixed bills and 0 sliders so you can add only the exact categories you use.
-                        </p>
-                      </div>
-                    </button>
-
-                    {/* Option 2: Standard Categories at 0 */}
+                  <div className="space-y-2.5 pt-1">
                     <button
                       type="button"
                       onClick={() => completeOnboarding('standard')}
-                      className={`w-full p-4 rounded-2xl border text-left transition-all flex items-start gap-4 ${
+                      className={`w-full p-4 rounded-2xl border text-left transition-all ${
                         darkMode
-                          ? 'bg-gray-900/60 border-gray-700 hover:border-emerald-500/60'
-                          : 'bg-gray-50 border-gray-200 hover:border-emerald-500'
+                          ? 'bg-slate-900/60 border-slate-700 hover:border-emerald-500/60'
+                          : 'bg-slate-50 border-slate-200 hover:border-emerald-600'
                       }`}
                     >
-                      <div className="p-3 rounded-xl bg-blue-500/15 text-blue-500 shrink-0">
-                        <Sliders className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base">
-                          Standard Categories (All Set to 0)
-                        </h3>
-                        <p
-                          className={`text-xs mt-1 ${
-                            darkMode ? 'text-gray-400' : 'text-gray-500'
-                          }`}
-                        >
-                          Creates common categories (Housing, Utilities, Groceries, Transport, Savings) initialized at {CURRENCIES[setupCurrency].symbol} 0 with slider limits scaled to your income.
-                        </p>
-                      </div>
+                      <div className="font-semibold text-sm">Standard Categories (All at 0)</div>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          darkMode ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        Scaffolds common categories (Rent, Utilities, Groceries, Fuel, Savings) ready for you to slide.
+                      </p>
                     </button>
 
-                    {/* Option 3: Sample Demo */}
+                    <button
+                      type="button"
+                      onClick={() => completeOnboarding('blank')}
+                      className={`w-full p-4 rounded-2xl border text-left transition-all ${
+                        darkMode
+                          ? 'bg-slate-900/60 border-slate-700 hover:border-emerald-500/60'
+                          : 'bg-slate-50 border-slate-200 hover:border-emerald-600'
+                      }`}
+                    >
+                      <div className="font-semibold text-sm">Blank Canvas</div>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          darkMode ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        Start completely fresh with 0 bills and 0 sliders.
+                      </p>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => completeOnboarding('demo')}
-                      className={`w-full p-4 rounded-2xl border text-left transition-all flex items-start gap-4 ${
+                      className={`w-full p-4 rounded-2xl border text-left transition-all ${
                         darkMode
-                          ? 'bg-gray-900/40 border-gray-700/70 hover:border-purple-500/60'
-                          : 'bg-white border-gray-200 hover:border-purple-500'
+                          ? 'bg-slate-900/40 border-slate-700 hover:border-slate-500'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                     >
-                      <div className="p-3 rounded-xl bg-purple-500/15 text-purple-500 shrink-0">
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base">
-                          Load Sample Demo Data
-                        </h3>
-                        <p
-                          className={`text-xs mt-1 ${
-                            darkMode ? 'text-gray-400' : 'text-gray-500'
-                          }`}
-                        >
-                          Populates example income, bills, and sliders so you can test drive the planner immediately.
-                        </p>
-                      </div>
+                      <div className="font-semibold text-sm">Sample Demo Plan</div>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          darkMode ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        Explore immediately with realistic pre-filled numbers.
+                      </p>
                     </button>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between">
+                  <div className="pt-2">
                     <button
                       type="button"
                       onClick={() => setOnboardingStep(1)}
-                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl ${
-                        darkMode
-                          ? 'text-gray-400 hover:text-gray-200'
-                          : 'text-gray-500 hover:text-gray-800'
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                        darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
-                      <ArrowLeft className="w-4 h-4" />
+                      <ArrowLeft className="w-3.5 h-3.5" />
                       Back
                     </button>
                   </div>
@@ -1462,46 +1275,38 @@ export default function App() {
   }
 
   // ============================================================================
-  // RENDER 2: MAIN PRODUCTION DASHBOARD
+  // MAIN DASHBOARD (CLEAN, MINIMAL, UNIFIED)
   // ============================================================================
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div
         className={`min-h-screen transition-colors duration-300 py-6 px-4 sm:px-6 flex flex-col items-center justify-between ${
-          darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'
+          darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
-        {/* Non-blocking Toast Notification */}
+        {/* Toast */}
         {toastMessage && (
-          <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-lg bg-gray-900 text-white dark:bg-emerald-600 text-xs font-semibold border border-gray-700 animate- bounce">
+          <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg bg-slate-900 text-white dark:bg-emerald-600 text-xs font-medium border border-slate-800 animate-fade-in">
             <Check className="w-4 h-4 text-emerald-400 dark:text-white" />
             <span>{toastMessage}</span>
           </div>
         )}
 
-        <div className="w-full max-w-xl mx-auto space-y-5">
+        <div className="w-full max-w-lg mx-auto space-y-5">
           {/* 1. Header */}
-          <header className="flex items-center justify-between gap-2 pt-1">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2.5 rounded-2xl shadow-sm flex items-center justify-center ${
-                  darkMode
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-emerald-600 text-white'
-                }`}
-              >
-                <Wallet className="w-6 h-6" />
+          <header className="flex items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <Wallet className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                  Save4U
-                </h1>
+                <h1 className="text-lg font-bold tracking-tight leading-none">Save4U</h1>
                 <p
-                  className={`text-xs ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  className={`text-[11px] mt-0.5 ${
+                    darkMode ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  Interactive Budget & Surplus Simulator
+                  Monthly Cash Flow
                 </p>
               </div>
             </div>
@@ -1510,15 +1315,32 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleCopySummary}
-                title="Copy budget summary"
-                className={`p-2.5 rounded-xl border transition-colors text-xs font-medium flex items-center gap-1.5 ${
+                title="Copy summary"
+                className={`p-2 rounded-xl border text-xs font-medium transition-colors ${
                   darkMode
-                    ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm'
+                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-xs'
                 }`}
               >
                 <Copy className="w-4 h-4" />
-                <span className="hidden sm:inline">Copy</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveModal('scenarios')}
+                title="Saved Scenarios"
+                className={`px-2.5 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                  scenarios.length > 0
+                    ? darkMode
+                      ? 'bg-slate-800 border-emerald-500/40 text-emerald-400'
+                      : 'bg-white border-emerald-600/40 text-emerald-700'
+                    : darkMode
+                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-xs'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>Plans{scenarios.length > 0 ? ` (${scenarios.length})` : ''}</span>
               </button>
 
               <button
@@ -1527,25 +1349,24 @@ export default function App() {
                   setConfirmReset(false);
                   setActiveModal('settings');
                 }}
-                title="Settings, Export & Reset"
-                className={`p-2.5 rounded-xl border transition-colors text-xs font-medium flex items-center gap-1.5 ${
+                title="Settings & Data"
+                className={`p-2 rounded-xl border text-xs font-medium transition-colors ${
                   darkMode
-                    ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm'
+                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-xs'
                 }`}
               >
                 <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Data</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => updateState({ darkMode: !darkMode })}
                 aria-label="Toggle Dark Mode"
-                className={`p-2.5 rounded-xl border transition-all duration-200 flex items-center gap-1.5 text-xs font-medium ${
+                className={`p-2 rounded-xl border transition-colors ${
                   darkMode
-                    ? 'bg-gray-800 border-gray-700 text-amber-400 hover:bg-gray-700'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100 shadow-sm'
+                    ? 'bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-xs'
                 }`}
               >
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -1553,302 +1374,145 @@ export default function App() {
             </div>
           </header>
 
-          {/* 2. Hero Card (Surplus & Income/Expense Summary) */}
+          {/* Quick Scenario Chips (Shown only if scenarios exist) */}
+          {scenarios.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mr-1 shrink-0">
+                Plan:
+              </span>
+              {scenarios.map((scen) => (
+                <button
+                  key={scen.id}
+                  type="button"
+                  onClick={() => handleLoadScenario(scen)}
+                  className={`px-3 py-1 rounded-lg border text-xs font-medium shrink-0 transition-colors ${
+                    darkMode
+                      ? 'bg-slate-800/80 border-slate-700 text-slate-200 hover:border-slate-500'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400 shadow-xs'
+                  }`}
+                >
+                  {scen.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 2. Hero Card: Calm, Clear Surplus & Utilization */}
           <section
-            className={`rounded-3xl p-5 sm:p-6 border transition-all duration-300 shadow-md ${
+            className={`rounded-3xl p-5 sm:p-6 border transition-all ${
               darkMode
                 ? isSurplus
-                  ? 'bg-gray-800/90 border-emerald-500/30 shadow-emerald-950/20'
-                  : 'bg-gray-800/90 border-red-500/40 shadow-red-950/20'
+                  ? 'bg-slate-800/70 border-slate-700/80'
+                  : 'bg-slate-800/70 border-rose-900/60'
                 : isSurplus
-                ? 'bg-white border-emerald-100 shadow-emerald-100/50'
-                : 'bg-white border-red-100 shadow-red-100/50'
+                ? 'bg-white border-slate-200/90 shadow-sm'
+                : 'bg-white border-rose-200 shadow-sm'
             }`}
           >
-            {/* Status Pill & Label */}
+            {/* Top Row: Label & Status Pill */}
             <div className="flex items-center justify-between mb-2">
               <span
                 className={`text-xs font-semibold uppercase tracking-wider ${
-                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                  darkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                {isSurplus ? 'Remaining Monthly Surplus' : 'Monthly Deficit'}
+                {isSurplus ? 'Monthly Surplus' : 'Monthly Deficit'}
               </span>
 
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
                   isSurplus
                     ? darkMode
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
                     : darkMode
-                    ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                    : 'bg-red-50 text-red-700 border border-red-200'
+                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    : 'bg-rose-50 text-rose-700 border border-rose-200/80'
                 }`}
               >
-                {isSurplus ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Within Budget
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    Over Budget
-                  </>
-                )}
+                {isSurplus ? 'Within Budget' : 'Over Budget'}
               </span>
             </div>
 
-            {/* Large Bold Surplus Value */}
-            <div className="flex items-baseline justify-between my-2">
+            {/* Big Surplus Value */}
+            <div className="my-1">
               <div
-                className={`text-4xl sm:text-5xl font-extrabold tracking-tight tabular-nums transition-colors duration-300 ${
+                className={`text-3xl sm:text-4xl font-extrabold tracking-tight font-mono tabular-nums ${
                   isSurplus
                     ? darkMode
                       ? 'text-emerald-400'
                       : 'text-emerald-600'
                     : darkMode
-                    ? 'text-red-400'
-                    : 'text-red-600'
+                    ? 'text-rose-400'
+                    : 'text-rose-600'
                 }`}
               >
                 {formatMoney(surplus, currency)}
               </div>
-
-              {totalIncome > 0 && (
-                <div className="flex items-center gap-1 text-xs font-medium">
-                  {isSurplus ? (
-                    <span
-                      className={`flex items-center gap-1 ${
-                        darkMode ? 'text-emerald-400' : 'text-emerald-600'
-                      }`}
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                      {Math.max(0, 100 - Math.round(rawExpenseRatio))}% unallocated
-                    </span>
-                  ) : (
-                    <span
-                      className={`flex items-center gap-1 ${
-                        darkMode ? 'text-red-400' : 'text-red-600'
-                      }`}
-                    >
-                      <TrendingDown className="w-4 h-4" />
-                      {Math.round(rawExpenseRatio - 100)}% over
-                    </span>
-                  )}
-                </div>
-              )}
+              <p
+                className={`text-xs mt-1 ${
+                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                }`}
+              >
+                {isSurplus
+                  ? 'Available for savings, debt payoff, or unallocated reserve.'
+                  : 'Planned expenses exceed current monthly income.'}
+              </p>
             </div>
 
-            {/* Horizontal Progress Bar */}
-            <div className="mt-4 mb-3">
-              <div className="flex justify-between text-xs font-medium mb-1.5">
-                <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-                  Income Utilization
+            {/* Single Elegant Progress Bar */}
+            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/60">
+              <div className="flex items-center justify-between text-xs font-medium mb-2">
+                <span>
+                  Expenses:{' '}
+                  <strong className={darkMode ? 'text-slate-200' : 'text-slate-800'}>
+                    {formatMoney(totalExpenses, currency)}
+                  </strong>
                 </span>
-                <span
-                  className={`font-semibold tabular-nums ${
-                    isSurplus
-                      ? darkMode
-                        ? 'text-emerald-400'
-                        : 'text-emerald-600'
-                      : darkMode
-                      ? 'text-red-400'
-                      : 'text-red-600'
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingItem(null);
+                    setIncomeForm({ label: '', amount: '' });
+                    setActiveModal('income');
+                  }}
+                  className="hover:underline text-emerald-600 dark:text-emerald-400 font-semibold"
                 >
-                  {totalIncome > 0 ? `${rawExpenseRatio.toFixed(1)}%` : 'Set income below'}
-                </span>
+                  Income: {formatMoney(totalIncome, currency)} ✎
+                </button>
               </div>
 
               <div
-                className={`w-full h-3.5 rounded-full overflow-hidden p-0.5 ${
-                  darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                className={`w-full h-2 rounded-full overflow-hidden ${
+                  darkMode ? 'bg-slate-700' : 'bg-slate-100'
                 }`}
               >
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
-                    isSurplus ? 'bg-emerald-500' : 'bg-red-500'
+                    isSurplus ? 'bg-emerald-500' : 'bg-rose-500'
                   }`}
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
 
-              <div
-                className={`flex justify-between items-center text-[11px] mt-1.5 ${
-                  darkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}
-              >
-                <span>Fixed: {fixedPercentage.toFixed(0)}%</span>
-                <span>Adjustable: {variablePercentage.toFixed(0)}%</span>
-              </div>
-            </div>
-
-            {/* Income vs Total Expenses Summary Cards */}
-            <div
-              className={`grid grid-cols-2 gap-3 pt-3 mt-3 border-t ${
-                darkMode ? 'border-gray-700/80' : 'border-gray-100'
-              }`}
-            >
-              {/* Clickable Monthly Income Card */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingItem(null);
-                  setIncomeForm({ label: '', amount: '' });
-                  setActiveModal('income');
-                }}
-                className={`p-3 rounded-2xl text-left border transition-all group ${
-                  darkMode
-                    ? 'bg-gray-900/60 border-gray-700/70 hover:border-emerald-500/50'
-                    : 'bg-gray-50 border-gray-200/60 hover:border-emerald-500'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`text-xs font-medium ${
-                      darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}
-                  >
-                    Monthly Income ({incomes.length})
-                  </span>
-                  <Edit3 className="w-3.5 h-3.5 text-emerald-500 opacity-80 group-hover:opacity-100" />
-                </div>
-                <span className="text-base sm:text-lg font-bold tabular-nums mt-0.5 block">
-                  {formatMoney(totalIncome, currency)}
-                </span>
-                {totalIncome === 0 && (
-                  <span className="text-[11px] text-emerald-500 font-semibold">
-                    + Click to set income
-                  </span>
-                )}
-              </button>
-
-              {/* Total Expenses Card */}
-              <div
-                className={`p-3 rounded-2xl border ${
-                  darkMode
-                    ? 'bg-gray-900/60 border-gray-700/70'
-                    : 'bg-gray-50 border-gray-200/60'
-                }`}
-              >
-                <span
-                  className={`block text-xs font-medium ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}
-                >
-                  Total Expenses
-                </span>
-                <span
-                  className={`text-base sm:text-lg font-bold tabular-nums mt-0.5 block ${
-                    !isSurplus
-                      ? darkMode
-                        ? 'text-red-400'
-                        : 'text-red-600'
-                      : ''
-                  }`}
-                >
-                  {formatMoney(totalExpenses, currency)}
-                </span>
-                <span
-                  className={`text-[11px] block ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}
-                >
-                  {fixedExpenses.length} fixed • {variableExpenses.length} sliders
-                </span>
+              <div className="flex justify-between items-center text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 font-mono">
+                <span>Fixed: {formatMoney(totalFixed, currency)}</span>
+                <span>Adjustable: {formatMoney(totalVariable, currency)}</span>
+                <span>{rawExpenseRatio.toFixed(0)}% used</span>
               </div>
             </div>
           </section>
 
-          {/* 3. Saved Scenarios Bar */}
-          <section
-            className={`rounded-2xl p-3.5 border transition-colors ${
-              darkMode
-                ? 'bg-gray-800/60 border-gray-700/70'
-                : 'bg-white border-gray-100 shadow-sm'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Bookmark className="w-4 h-4 text-emerald-500" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  Saved Scenarios ({scenarios.length})
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setScenarioName('');
-                  setActiveModal('scenario');
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                  darkMode
-                    ? 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Save Snapshot
-              </button>
-            </div>
-
-            {scenarios.length > 0 ? (
-              <div className="flex items-center gap-2 overflow-x-auto pt-2.5 pb-1">
-                {scenarios.map((scen) => (
-                  <div
-                    key={scen.id}
-                    className={`inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-xl border text-xs font-medium shrink-0 ${
-                      darkMode
-                        ? 'bg-gray-900/70 border-gray-700 text-gray-200'
-                        : 'bg-gray-50 border-gray-200 text-gray-700'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleLoadScenario(scen)}
-                      className="hover:underline font-semibold"
-                    >
-                      {scen.name}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteScenario(scen.id)}
-                      title="Delete scenario"
-                      className="p-1 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-500"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p
-                className={`text-xs mt-1.5 ${
-                  darkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}
-              >
-                Save snapshots of your budget (e.g., &ldquo;Base Plan&rdquo;, &ldquo;Tight Month&rdquo;) to compare options anytime.
-              </p>
-            )}
-          </section>
-
-          {/* 4. Interactive Adjustable Expense Sliders */}
+          {/* 3. Adjustable Expenses Section */}
           <section className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div>
-                <h2 className="text-sm font-bold uppercase tracking-wider">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Adjustable Expenses
                 </h2>
-                <p
-                  className={`text-xs ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}
-                >
-                  Variable total: {formatMoney(totalVariable, currency)}
-                </p>
+                <span className="text-xs font-mono text-slate-400 dark:text-slate-500">
+                  Total: {formatMoney(totalVariable, currency)}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1856,13 +1520,12 @@ export default function App() {
                   <button
                     type="button"
                     onClick={handleZeroAllSliders}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                    className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors ${
                       darkMode
-                        ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
-                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'
+                        ? 'border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
                     Zero All
                   </button>
                 )}
@@ -1870,7 +1533,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openVariableModal(null)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Slider
@@ -1881,28 +1544,24 @@ export default function App() {
             {variableExpenses.length === 0 ? (
               <div
                 className={`rounded-2xl p-6 border border-dashed text-center ${
-                  darkMode
-                    ? 'border-gray-700 bg-gray-800/30'
-                    : 'border-gray-300 bg-white/60'
+                  darkMode ? 'border-slate-700 bg-slate-800/20' : 'border-slate-200 bg-white/50'
                 }`}
               >
-                <Sliders className="w-8 h-8 mx-auto mb-2 text-emerald-500 opacity-80" />
-                <h3 className="font-bold text-sm">No Adjustable Sliders Yet</h3>
+                <Sliders className="w-6 h-6 mx-auto mb-2 text-slate-400" />
                 <p
-                  className={`text-xs mt-1 max-w-sm mx-auto ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  className={`text-xs max-w-xs mx-auto ${
+                    darkMode ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
-                  Add flexible monthly categories like Groceries, Fuel, Dining Out, or Savings to simulate how changes impact your surplus.
+                  No adjustable expenses added yet. Add categories like Groceries, Fuel, or Savings to slide and budget.
                 </p>
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <div className="mt-3 flex items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => openVariableModal(null)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white"
                   >
-                    <Plus className="w-4 h-4" />
-                    Add First Expense Slider
+                    + Add Slider
                   </button>
                   <button
                     type="button"
@@ -1912,20 +1571,20 @@ export default function App() {
                         ...prev,
                         variableExpenses: scaffold.variableExpenses,
                       }));
-                      showToast('Added standard sliders at 0');
+                      showToast('Standard sliders added');
                     }}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-medium border ${
                       darkMode
-                        ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
-                        : 'border-gray-200 text-gray-700 hover:bg-gray-100'
+                        ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    Load Standard Sliders (at 0)
+                    Add Standard
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {variableExpenses.map((item) => (
                   <SliderRow
                     key={item.id}
@@ -1943,129 +1602,104 @@ export default function App() {
             )}
           </section>
 
-          {/* 5. Footer: Fixed Monthly Commitments */}
+          {/* 4. Fixed Monthly Commitments */}
           <footer
-            className={`rounded-2xl p-4 sm:p-5 border transition-colors ${
+            className={`rounded-3xl p-5 border transition-colors ${
               darkMode
-                ? 'bg-gray-800/50 border-gray-800 text-gray-300'
-                : 'bg-gray-100/80 border-gray-200/80 text-gray-700'
+                ? 'bg-slate-800/40 border-slate-700/60'
+                : 'bg-white border-slate-200/80 shadow-xs'
             }`}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
-                <Lock
-                  className={`w-4 h-4 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}
-                />
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider block">
-                    Fixed Monthly Commitments
-                  </span>
-                  <span
-                    className={`text-[11px] ${
-                      darkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}
-                  >
-                    Total fixed: {formatMoney(totalFixed, currency)}
-                  </span>
-                </div>
+                <Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Fixed Commitments
+                </span>
               </div>
-
-              <button
-                type="button"
-                onClick={() => openFixedModal(null)}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-                  darkMode
-                    ? 'bg-gray-800 border-gray-700 text-emerald-400 hover:bg-gray-700'
-                    : 'bg-white border-gray-200 text-emerald-700 hover:bg-gray-50 shadow-sm'
-                }`}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Fixed Bill
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold font-mono">
+                  {formatMoney(totalFixed, currency)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => openFixedModal(null)}
+                  className={`p-1 rounded-lg border text-xs font-medium ${
+                    darkMode
+                      ? 'border-slate-700 text-slate-300 hover:bg-slate-700'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                  title="Add fixed bill"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {fixedExpenses.length === 0 ? (
-              <div
-                className={`rounded-xl p-4 border border-dashed text-center ${
-                  darkMode ? 'border-gray-700/80' : 'border-gray-300'
+              <p
+                className={`text-xs py-3 text-center ${
+                  darkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                <p
-                  className={`text-xs ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}
-                >
-                  No fixed monthly commitments added yet (e.g., Rent, Bond, Car Payment, Wifi, Insurance).
-                </p>
-              </div>
+                No fixed bills added (e.g. Rent, Bond, Car, Wi-Fi).
+              </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="pt-2 divide-y divide-slate-100 dark:divide-slate-700/40">
                 {fixedExpenses.map((item) => {
                   const ItemIcon = ICON_MAP[item.icon] || Lock;
                   return (
                     <div
                       key={item.id}
-                      className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${
-                        item.enabled === false ? 'opacity-50 ' : ''
-                      }${
-                        darkMode
-                          ? 'bg-gray-900/60 border-gray-700/60'
-                          : 'bg-white border-gray-200/70'
+                      className={`py-2.5 flex items-center justify-between gap-3 text-xs ${
+                        item.enabled === false ? 'opacity-40' : ''
                       }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`p-2 rounded-lg shrink-0 ${
-                            darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'
+                        <ItemIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span
+                          className={`font-medium truncate ${
+                            item.enabled === false ? 'line-through' : ''
                           }`}
                         >
-                          <ItemIcon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <span
-                            className={`text-xs font-semibold block truncate ${
-                              item.enabled === false ? 'line-through' : ''
-                            }`}
-                          >
-                            {item.label}
-                          </span>
-                          <span className="text-sm font-bold tabular-nums">
-                            {formatMoney(item.amount, currency)}
-                          </span>
-                        </div>
+                          {item.label}
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleFixed(item.id)}
-                          title={item.enabled === false ? 'Enable bill' : 'Pause bill'}
-                          className="p-1.5 rounded-lg hover:bg-gray-500/10 text-gray-400 hover:text-gray-200"
-                        >
-                          {item.enabled === false ? (
-                            <EyeOff className="w-3.5 h-3.5" />
-                          ) : (
-                            <Eye className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openFixedModal(item)}
-                          title="Edit bill"
-                          className="p-1.5 rounded-lg hover:bg-gray-500/10 text-gray-400 hover:text-gray-200"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFixed(item.id)}
-                          title="Delete bill"
-                          className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-500"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono font-semibold">
+                          {formatMoney(item.amount, currency)}
+                        </span>
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFixed(item.id)}
+                            title={item.enabled === false ? 'Enable' : 'Pause'}
+                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            {item.enabled === false ? (
+                              <EyeOff className="w-3.5 h-3.5" />
+                            ) : (
+                              <Eye className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openFixedModal(item)}
+                            title="Edit"
+                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFixed(item.id)}
+                            title="Delete"
+                            className="p-1 rounded hover:bg-rose-500/10 text-slate-400 hover:text-rose-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -2076,114 +1710,79 @@ export default function App() {
         </div>
 
         {/* ==================================================================== */}
-        {/* MODALS OVERLAY                                                       */}
+        {/* MODALS                                                               */}
         {/* ==================================================================== */}
         {activeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
             <div
-              className={`w-full max-w-md rounded-3xl p-6 border shadow-xl max-h-[90vh] overflow-y-auto ${
+              className={`w-full max-w-sm rounded-3xl p-5 border shadow-xl max-h-[90vh] overflow-y-auto ${
                 darkMode
-                  ? 'bg-gray-800 border-gray-700 text-gray-100'
-                  : 'bg-white border-gray-100 text-gray-900'
+                  ? 'bg-slate-800 border-slate-700 text-slate-100'
+                  : 'bg-white border-slate-200 text-slate-900'
               }`}
             >
-              {/* 1. INCOME MANAGER MODAL */}
+              {/* 1. INCOME MODAL */}
               {activeModal === 'income' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">Manage Monthly Income</h3>
+                    <h3 className="text-base font-bold">Monthly Income</h3>
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="p-1.5 rounded-xl hover:bg-gray-500/10"
+                      className="p-1 rounded-lg hover:bg-slate-500/10"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Existing Income Streams List */}
-                  <div className="space-y-2">
-                    {incomes.length === 0 ? (
-                      <p
-                        className={`text-xs py-3 text-center rounded-xl border border-dashed ${
-                          darkMode
-                            ? 'border-gray-700 text-gray-400'
-                            : 'border-gray-200 text-gray-500'
-                        }`}
-                      >
-                        No income streams added yet. Add your primary income below.
-                      </p>
-                    ) : (
-                      incomes.map((inc) => (
+                  {incomes.length > 0 && (
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {incomes.map((inc) => (
                         <div
                           key={inc.id}
-                          className={`p-3 rounded-xl border flex items-center justify-between ${
+                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs ${
+                            inc.enabled === false ? 'opacity-40' : ''
+                          } ${
                             darkMode
-                              ? 'bg-gray-900/60 border-gray-700'
-                              : 'bg-gray-50 border-gray-200'
+                              ? 'bg-slate-900/50 border-slate-700'
+                              : 'bg-slate-50 border-slate-200'
                           }`}
                         >
-                          <div>
-                            <div
-                              className={`text-sm font-semibold ${
-                                inc.enabled === false ? 'line-through opacity-50' : ''
-                              }`}
-                            >
-                              {inc.label}
-                            </div>
-                            <div className="text-sm font-bold text-emerald-500 tabular-nums">
+                          <div className="min-w-0">
+                            <span className="font-semibold block truncate">{inc.label}</span>
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                               {formatMoney(inc.amount, currency)}
-                            </div>
+                            </span>
                           </div>
-
                           <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleIncome(inc.id)}
-                              className="p-1.5 rounded-lg hover:bg-gray-500/10"
-                              title={inc.enabled === false ? 'Enable' : 'Pause'}
-                            >
-                              {inc.enabled === false ? (
-                                <EyeOff className="w-4 h-4 text-gray-400" />
-                              ) : (
-                                <Eye className="w-4 h-4 text-gray-400" />
-                              )}
-                            </button>
                             <button
                               type="button"
                               onClick={() => {
                                 setEditingItem(inc);
-                                setIncomeForm({
-                                  label: inc.label,
-                                  amount: String(inc.amount),
-                                });
+                                setIncomeForm({ label: inc.label, amount: String(inc.amount) });
                               }}
-                              className="p-1.5 rounded-lg hover:bg-gray-500/10"
-                              title="Edit"
+                              className="p-1 rounded hover:bg-slate-500/10 text-slate-400"
                             >
-                              <Edit3 className="w-4 h-4 text-gray-400" />
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteIncome(inc.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400"
-                              title="Delete"
+                              className="p-1 rounded hover:bg-rose-500/10 text-slate-400 hover:text-rose-500"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
 
-                  {/* Add / Edit Income Form */}
-                  <form onSubmit={handleAddOrUpdateIncome} className="space-y-3 pt-2 border-t dark:border-gray-700">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500">
-                      {editingItem ? 'Edit Income Stream' : '+ Add Income Stream'}
-                    </h4>
+                  <form onSubmit={handleAddOrUpdateIncome} className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-700">
                     <div>
-                      <label className="block text-xs font-medium mb-1">Label</label>
+                      <label className="block text-xs font-medium mb-1">
+                        {editingItem ? 'Edit Income Name' : 'Add Income Stream'}
+                      </label>
                       <input
                         type="text"
                         required
@@ -2191,17 +1790,18 @@ export default function App() {
                         onChange={(e) =>
                           setIncomeForm((prev) => ({ ...prev, label: e.target.value }))
                         }
-                        placeholder="e.g., Salary, Side Hustle, Rental"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${
+                        placeholder="e.g. Salary, Freelance, Side Hustle"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${
                           darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
+                            ? 'bg-slate-900 border-slate-700 text-white'
+                            : 'bg-slate-50 border-slate-200 text-slate-900'
                         }`}
                       />
                     </div>
+
                     <div>
                       <label className="block text-xs font-medium mb-1">
-                        Monthly Amount ({CURRENCIES[currency].symbol})
+                        Amount ({CURRENCIES[currency].symbol})
                       </label>
                       <input
                         type="number"
@@ -2212,14 +1812,15 @@ export default function App() {
                           setIncomeForm((prev) => ({ ...prev, amount: e.target.value }))
                         }
                         placeholder="0"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-bold outline-none ${
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none ${
                           darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
+                            ? 'bg-slate-900 border-slate-700 text-white'
+                            : 'bg-slate-50 border-slate-200 text-slate-900'
                         }`}
                       />
                     </div>
-                    <div className="flex justify-end gap-2 pt-2">
+
+                    <div className="flex justify-end gap-2 pt-1">
                       {editingItem && (
                         <button
                           type="button"
@@ -2227,40 +1828,40 @@ export default function App() {
                             setEditingItem(null);
                             setIncomeForm({ label: '', amount: '' });
                           }}
-                          className="px-3 py-2 rounded-xl text-xs font-semibold border border-gray-600"
+                          className="px-3 py-1.5 rounded-xl text-xs border border-slate-300 dark:border-slate-600"
                         >
-                          Cancel Edit
+                          Cancel
                         </button>
                       )}
                       <button
                         type="submit"
-                        className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                        className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
                       >
-                        {editingItem ? 'Update Income' : 'Add Income'}
+                        {editingItem ? 'Save Changes' : '+ Add Stream'}
                       </button>
                     </div>
                   </form>
                 </div>
               )}
 
-              {/* 2. FIXED COMMITMENT MODAL */}
+              {/* 2. FIXED EXPENSE MODAL */}
               {activeModal === 'fixed' && (
-                <form onSubmit={handleSaveFixed} className="space-y-4">
+                <form onSubmit={handleSaveFixed} className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">
-                      {editingItem ? 'Edit Fixed Commitment' : 'Add Fixed Commitment'}
+                    <h3 className="text-base font-bold">
+                      {editingItem ? 'Edit Fixed Bill' : 'New Fixed Commitment'}
                     </h3>
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="p-1.5 rounded-xl hover:bg-gray-500/10"
+                      className="p-1 rounded-lg hover:bg-slate-500/10"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium mb-1">Bill / Commitment Name</label>
+                    <label className="block text-xs font-medium mb-1">Bill Name</label>
                     <input
                       type="text"
                       required
@@ -2269,11 +1870,11 @@ export default function App() {
                       onChange={(e) =>
                         setFixedForm((prev) => ({ ...prev, label: e.target.value }))
                       }
-                      placeholder="e.g., Rent / Bond, Car Payment, Fibre"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${
+                      placeholder="e.g. Rent, Car, Wi-Fi, Insurance"
+                      className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${
                         darkMode
-                          ? 'bg-gray-900 border-gray-700 text-white'
-                          : 'bg-gray-50 border-gray-200 text-gray-900'
+                          ? 'bg-slate-900 border-slate-700 text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-900'
                       }`}
                     />
                   </div>
@@ -2291,30 +1892,30 @@ export default function App() {
                         setFixedForm((prev) => ({ ...prev, amount: e.target.value }))
                       }
                       placeholder="0"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-bold outline-none ${
+                      className={`w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none ${
                         darkMode
-                          ? 'bg-gray-900 border-gray-700 text-white'
-                          : 'bg-gray-50 border-gray-200 text-gray-900'
+                          ? 'bg-slate-900 border-slate-700 text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-900'
                       }`}
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium mb-1.5">Icon</label>
-                    <div className="grid grid-cols-8 gap-1.5">
-                      {ICON_KEYS.map((key) => {
-                        const IconComp = ICON_MAP[key];
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {['Home', 'Car', 'Wifi', 'Smartphone', 'Shield', 'CreditCard'].map((key) => {
+                        const IconComp = ICON_MAP[key] || Lock;
                         return (
                           <button
                             key={key}
                             type="button"
                             onClick={() => setFixedForm((prev) => ({ ...prev, icon: key }))}
-                            className={`p-2 rounded-xl border flex items-center justify-center ${
+                            className={`p-2 rounded-xl border flex items-center justify-center transition-colors ${
                               fixedForm.icon === key
-                                ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400'
+                                ? 'border-emerald-600 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                 : darkMode
-                                ? 'border-gray-700 bg-gray-900 text-gray-400'
-                                : 'border-gray-200 bg-gray-50 text-gray-600'
+                                ? 'border-slate-700 bg-slate-900 text-slate-400'
+                                : 'border-slate-200 bg-slate-50 text-slate-600'
                             }`}
                           >
                             <IconComp className="w-4 h-4" />
@@ -2328,15 +1929,15 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold border border-gray-500/30"
+                      className="px-3 py-1.5 rounded-xl text-xs border border-slate-300 dark:border-slate-600"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
                     >
-                      Save Commitment
+                      Save Bill
                     </button>
                   </div>
                 </form>
@@ -2344,62 +1945,60 @@ export default function App() {
 
               {/* 3. VARIABLE SLIDER MODAL */}
               {activeModal === 'variable' && (
-                <form onSubmit={handleSaveVariable} className="space-y-4">
+                <form onSubmit={handleSaveVariable} className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">
-                      {editingItem ? 'Edit Expense Slider' : 'Add Expense Slider'}
+                    <h3 className="text-base font-bold">
+                      {editingItem ? 'Edit Slider' : 'New Adjustable Slider'}
                     </h3>
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="p-1.5 rounded-xl hover:bg-gray-500/10"
+                      className="p-1 rounded-lg hover:bg-slate-500/10"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium mb-1">Category Name</label>
-                      <input
-                        type="text"
-                        required
-                        autoFocus
-                        value={variableForm.label}
-                        onChange={(e) =>
-                          setVariableForm((prev) => ({ ...prev, label: e.target.value }))
-                        }
-                        placeholder="e.g., Groceries, Fuel, Stokvel"
-                        className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${
-                          darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium mb-1">Subtitle / Note</label>
-                      <input
-                        type="text"
-                        value={variableForm.subtitle}
-                        onChange={(e) =>
-                          setVariableForm((prev) => ({ ...prev, subtitle: e.target.value }))
-                        }
-                        placeholder="e.g., Monthly food & household"
-                        className={`w-full px-3.5 py-2 rounded-xl border text-sm outline-none ${
-                          darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
-                        }`}
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Category Name</label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={variableForm.label}
+                      onChange={(e) =>
+                        setVariableForm((prev) => ({ ...prev, label: e.target.value }))
+                      }
+                      placeholder="e.g. Groceries, Fuel, Entertainment"
+                      className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${
+                        darkMode
+                          ? 'bg-slate-900 border-slate-700 text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-900'
+                      }`}
+                    />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Subtitle (optional)</label>
+                    <input
+                      type="text"
+                      value={variableForm.subtitle}
+                      onChange={(e) =>
+                        setVariableForm((prev) => ({ ...prev, subtitle: e.target.value }))
+                      }
+                      placeholder="e.g. Supermarket food, household"
+                      className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${
+                        darkMode
+                          ? 'bg-slate-900 border-slate-700 text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-900'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-medium mb-1">
-                        Initial ({CURRENCIES[currency].symbol})
+                        Current Value ({CURRENCIES[currency].symbol})
                       </label>
                       <input
                         type="number"
@@ -2409,17 +2008,17 @@ export default function App() {
                         onChange={(e) =>
                           setVariableForm((prev) => ({ ...prev, value: e.target.value }))
                         }
-                        className={`w-full px-3 py-2 rounded-xl border text-sm font-bold outline-none ${
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none ${
                           darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
+                            ? 'bg-slate-900 border-slate-700 text-white'
+                            : 'bg-slate-50 border-slate-200 text-slate-900'
                         }`}
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-medium mb-1">
-                        Max Limit ({CURRENCIES[currency].symbol})
+                        Max Cap ({CURRENCIES[currency].symbol})
                       </label>
                       <input
                         type="number"
@@ -2429,78 +2028,31 @@ export default function App() {
                         onChange={(e) =>
                           setVariableForm((prev) => ({ ...prev, max: e.target.value }))
                         }
-                        className={`w-full px-3 py-2 rounded-xl border text-sm font-bold outline-none ${
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none ${
                           darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium mb-1">
-                        Step ({CURRENCIES[currency].symbol})
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        required
-                        value={variableForm.step}
-                        onChange={(e) =>
-                          setVariableForm((prev) => ({ ...prev, step: e.target.value }))
-                        }
-                        className={`w-full px-3 py-2 rounded-xl border text-sm font-bold outline-none ${
-                          darkMode
-                            ? 'bg-gray-900 border-gray-700 text-white'
-                            : 'bg-gray-50 border-gray-200 text-gray-900'
+                            ? 'bg-slate-900 border-slate-700 text-white'
+                            : 'bg-slate-50 border-slate-200 text-slate-900'
                         }`}
                       />
                     </div>
                   </div>
 
-                  {/* Color Accent Picker */}
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5">Accent Color</label>
-                    <div className="flex items-center gap-2">
-                      {Object.entries(COLOR_THEMES).map(([key, theme]) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() =>
-                            setVariableForm((prev) => ({ ...prev, color: key }))
-                          }
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium ${
-                            variableForm.color === key
-                              ? 'border-emerald-500 font-bold'
-                              : 'border-transparent opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <span className={`w-3.5 h-3.5 rounded-full ${theme.dot}`} />
-                          <span className="hidden sm:inline">{theme.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Icon Picker */}
                   <div>
                     <label className="block text-xs font-medium mb-1.5">Icon</label>
-                    <div className="grid grid-cols-8 gap-1.5">
-                      {ICON_KEYS.map((key) => {
-                        const IconComp = ICON_MAP[key];
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {['ShoppingBag', 'Fuel', 'PiggyBank', 'Sparkles', 'Utensils', 'HeartPulse'].map((key) => {
+                        const IconComp = ICON_MAP[key] || Sliders;
                         return (
                           <button
                             key={key}
                             type="button"
-                            onClick={() =>
-                              setVariableForm((prev) => ({ ...prev, icon: key }))
-                            }
-                            className={`p-2 rounded-xl border flex items-center justify-center ${
+                            onClick={() => setVariableForm((prev) => ({ ...prev, icon: key }))}
+                            className={`p-2 rounded-xl border flex items-center justify-center transition-colors ${
                               variableForm.icon === key
-                                ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400'
+                                ? 'border-emerald-600 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                 : darkMode
-                                ? 'border-gray-700 bg-gray-900 text-gray-400'
-                                : 'border-gray-200 bg-gray-50 text-gray-600'
+                                ? 'border-slate-700 bg-slate-900 text-slate-400'
+                                : 'border-slate-200 bg-slate-50 text-slate-600'
                             }`}
                           >
                             <IconComp className="w-4 h-4" />
@@ -2514,13 +2066,13 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold border border-gray-500/30"
+                      className="px-3 py-1.5 rounded-xl text-xs border border-slate-300 dark:border-slate-600"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
                     >
                       Save Slider
                     </button>
@@ -2528,133 +2080,161 @@ export default function App() {
                 </form>
               )}
 
-              {/* 4. SAVE SCENARIO MODAL */}
-              {activeModal === 'scenario' && (
-                <form onSubmit={handleSaveScenario} className="space-y-4">
+              {/* 4. SCENARIOS MODAL */}
+              {activeModal === 'scenarios' && (
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">Save Budget Scenario</h3>
+                    <h3 className="text-base font-bold">Saved Budget Plans</h3>
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="p-1.5 rounded-xl hover:bg-gray-500/10"
+                      className="p-1 rounded-lg hover:bg-slate-500/10"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <p className="text-xs opacity-75">
-                    Save a snapshot of your current income, fixed commitments, and slider positions so you can restore it anytime.
+                  <p className="text-xs text-slate-400">
+                    Save snapshots of your budget (e.g. &ldquo;Base Plan&rdquo;, &ldquo;Lean Month&rdquo;) to compare anytime.
                   </p>
 
-                  <div>
-                    <label className="block text-xs font-medium mb-1">Scenario Name</label>
+                  <form onSubmit={handleSaveScenario} className="flex gap-2">
                     <input
                       type="text"
                       required
-                      autoFocus
                       value={scenarioName}
                       onChange={(e) => setScenarioName(e.target.value)}
-                      placeholder="e.g., Base Plan, Aggressive Savings, Lean Month"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${
+                      placeholder="Name this snapshot..."
+                      className={`flex-1 px-3 py-2 rounded-xl border text-xs outline-none ${
                         darkMode
-                          ? 'bg-gray-900 border-gray-700 text-white'
-                          : 'bg-gray-50 border-gray-200 text-gray-900'
+                          ? 'bg-slate-900 border-slate-700 text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-900'
                       }`}
                     />
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveModal(null)}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold border border-gray-500/30"
-                    >
-                      Cancel
-                    </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shrink-0"
                     >
-                      Save Snapshot
+                      Save
                     </button>
-                  </div>
-                </form>
+                  </form>
+
+                  {scenarios.length > 0 ? (
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 pt-1">
+                      {scenarios.map((scen) => (
+                        <div
+                          key={scen.id}
+                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs ${
+                            darkMode
+                              ? 'bg-slate-900/50 border-slate-700'
+                              : 'bg-slate-50 border-slate-200'
+                          }`}
+                        >
+                          <span className="font-semibold truncate">{scen.name}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleLoadScenario(scen);
+                                setActiveModal(null);
+                              }}
+                              className="px-2 py-1 rounded bg-emerald-600 text-white text-[11px] font-medium"
+                            >
+                              Load
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteScenario(scen.id)}
+                              className="p-1 rounded text-slate-400 hover:text-rose-500"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-center py-4 text-slate-400">
+                      No saved plans yet.
+                    </p>
+                  )}
+                </div>
               )}
 
-              {/* 5. SETTINGS, PORTABILITY & FACTORY RESET MODAL */}
+              {/* 5. SETTINGS & DATA MODAL */}
               {activeModal === 'settings' && (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">Workspace & Data Settings</h3>
+                    <h3 className="text-base font-bold">Settings & Data</h3>
                     <button
                       type="button"
                       onClick={() => setActiveModal(null)}
-                      className="p-1.5 rounded-xl hover:bg-gray-500/10"
+                      className="p-1 rounded-lg hover:bg-slate-500/10"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Currency Switcher */}
+                  {/* Currency switcher */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-2">
-                      Display Currency
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Currency
                     </label>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-4 gap-1.5">
                       {Object.values(CURRENCIES).map((curr) => (
                         <button
                           key={curr.code}
                           type="button"
                           onClick={() => {
                             updateState({ currency: curr.code });
-                            showToast(`Currency set to ${curr.code}`);
+                            showToast(`Currency changed to ${curr.code}`);
                           }}
-                          className={`p-2.5 rounded-xl border text-center transition-all ${
+                          className={`p-2 rounded-xl border text-center transition-all ${
                             currency === curr.code
-                              ? 'border-emerald-500 bg-emerald-500/15 font-bold text-emerald-400'
+                              ? 'border-emerald-600 bg-emerald-500/15 font-bold text-emerald-600 dark:text-emerald-400'
                               : darkMode
-                              ? 'border-gray-700 bg-gray-900/50'
-                              : 'border-gray-200 bg-gray-50'
+                              ? 'border-slate-700 bg-slate-900/50'
+                              : 'border-slate-200 bg-slate-50'
                           }`}
                         >
-                          <div className="text-base font-extrabold">{curr.symbol}</div>
-                          <div className="text-[11px] opacity-75">{curr.code}</div>
+                          <div className="text-sm font-bold font-mono">{curr.symbol}</div>
+                          <div className="text-[10px] opacity-75">{curr.code}</div>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Export & Backup */}
-                  <div className="space-y-2 pt-2 border-t dark:border-gray-700">
-                    <label className="block text-xs font-bold uppercase tracking-wider">
-                      Export & Backup
+                  {/* Backup / Export */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Backup & Export
                     </label>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={handleExportCSV}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 text-xs font-semibold ${
+                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-medium ${
                           darkMode
-                            ? 'bg-gray-900/60 border-gray-700 hover:bg-gray-900'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            ? 'bg-slate-900/50 border-slate-700 hover:bg-slate-900'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>Download CSV Sheet</span>
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                        <span>Export CSV</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handleExportJSON}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 text-xs font-semibold ${
+                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2 text-xs font-medium ${
                           darkMode
-                            ? 'bg-gray-900/60 border-gray-700 hover:bg-gray-900'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            ? 'bg-slate-900/50 border-slate-700 hover:bg-slate-900'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        <Download className="w-4 h-4 text-blue-500 shrink-0" />
-                        <span>Backup JSON File</span>
+                        <Download className="w-4 h-4 text-slate-400" />
+                        <span>Backup JSON</span>
                       </button>
                     </div>
 
@@ -2668,48 +2248,48 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className={`w-full p-3 rounded-xl border text-left flex items-center justify-center gap-2 text-xs font-semibold ${
+                      className={`w-full p-2.5 rounded-xl border text-center flex items-center justify-center gap-2 text-xs font-medium ${
                         darkMode
-                          ? 'bg-gray-900/40 border-gray-700 hover:bg-gray-900'
-                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                          ? 'bg-slate-900/30 border-slate-700 hover:bg-slate-900'
+                          : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      <Upload className="w-4 h-4 text-purple-500" />
-                      <span>Restore from JSON Backup</span>
+                      <Upload className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Restore from JSON</span>
                     </button>
                   </div>
 
-                  {/* Factory Reset */}
-                  <div className="pt-3 border-t dark:border-gray-700">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-red-400 mb-2">
-                      Danger Zone
+                  {/* Reset */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-rose-500 mb-2">
+                      Reset
                     </label>
                     {!confirmReset ? (
                       <button
                         type="button"
                         onClick={() => setConfirmReset(true)}
-                        className="w-full p-3 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                        className="w-full p-2.5 rounded-xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 text-xs font-medium flex items-center justify-center gap-2 transition-colors"
                       >
-                        <RefreshCw className="w-4 h-4" />
-                        Factory Reset & Return to Onboarding
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Reset Data & Return to Setup
                       </button>
                     ) : (
-                      <div className="p-3 rounded-xl border border-red-500 bg-red-500/10 space-y-2">
-                        <p className="text-xs font-semibold text-red-400">
-                          Are you sure? This will wipe all saved incomes, expenses, and scenarios from this browser.
+                      <div className="p-3 rounded-xl border border-rose-500 bg-rose-500/10 space-y-2">
+                        <p className="text-xs font-medium text-rose-500">
+                          Clear all local budget data and return to setup?
                         </p>
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={handleFactoryReset}
-                            className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold"
+                            className="flex-1 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold"
                           >
-                            Yes, Wipe Everything
+                            Yes, Reset
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmReset(false)}
-                            className="flex-1 py-2 rounded-lg border border-gray-600 text-xs font-semibold"
+                            className="flex-1 py-1.5 rounded-lg border border-slate-500 text-xs font-medium"
                           >
                             Cancel
                           </button>
