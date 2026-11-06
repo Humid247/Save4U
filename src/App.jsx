@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 
 // Versioned storage key for clean production state
-const STORAGE_KEY = 'cashflow_planner_prod_v2';
+const STORAGE_KEY = 'save4u_v1';
 
 // Supported currencies
 const CURRENCIES = {
