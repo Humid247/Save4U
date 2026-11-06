@@ -147,7 +147,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                Cash Flow Planner
+                Save4U
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Monthly Net Income: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatRand(INCOME)}</span>
